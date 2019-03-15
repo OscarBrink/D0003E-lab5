@@ -2,9 +2,14 @@
 #include <avr/io.h>
 
 #include "TinyTimber.h"
+#include "BridgeHandler.h"
 
 
 int main(void) {
+
+    //BridgeHandler bridgeHandler = initBridgeHandler();
+
+    
 
 //    OutputHandler oH = initOutputHandler();
 //

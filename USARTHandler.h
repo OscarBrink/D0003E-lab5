@@ -7,7 +7,6 @@ typedef struct {
 
 #define initUSARTHandler() { initObject() }
 
-void flipLightStatus(USARTHandler *this, uint8_t outputBit);
-
-uint8_t readSensor(USARTHandler *this, uint8_t sensorBit);
+//void flipLightStatus(USARTHandler *this, uint8_t arg);
+//uint8_t readSensor(USARTHandler *this, uint8_t arg);
 
