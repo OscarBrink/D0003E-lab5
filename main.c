@@ -6,22 +6,10 @@
 
 
 int main(void) {
+    BridgeHandler bridgeHandler = initBridgeHandler();
 
-    //BridgeHandler bridgeHandler = initBridgeHandler();
+    INSTALL(&bridgeHandler, &readSensors, IRQ_USART0_RX);
 
-    
-
-//    OutputHandler oH = initOutputHandler();
-//
-//    PulseGenerator pG1 = initPulseGenerator(&oH, PE6, 0);
-//    PulseGenerator pG2 = initPulseGenerator(&oH, PE4, 4);
-//
-//    InputHandler inputHandler = initInputHandler(&pG1, &pG2);
-//
-//    INSTALL(&inputHandler, &handleJoystickInterrupt, IRQ_PCINT0);
-//    INSTALL(&inputHandler, &handleJoystickInterrupt, IRQ_PCINT1);
-//
-//    return TINYTIMBER(&inputHandler, &displayInitialData, 0);
-    return 0;
+    return TINYTIMBER(&bridgeHandler, &changeLightStatus, ALLRED);
 }
 

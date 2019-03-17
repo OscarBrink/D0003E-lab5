@@ -4,6 +4,11 @@
 
 #define MAXCARSONBRIDGE 5
 
+#define SBRIDGE 3
+#define SARRIVAL 2
+#define NBRIDGE 1
+#define NARRIVAL 0
+
 // Helper functions
 static inline uint8_t getOppositeDirection(BridgeHandler *this);
 static inline uint8_t getDirectionLightGreen(BridgeHandler *this);
@@ -73,6 +78,23 @@ void changeLightStatus(BridgeHandler *this, uint8_t lightStatus) {
 }
 
 uint8_t readSensors(BridgeHandler *this, uint8_t arg) {
+
+    //while ( !(UCSR0A & (1<<RXC) );
+    uint8_t data = UDR0;
+
+    if ( (data>>SBRIDGE) & 1 ) {
+        ASYNC(&this, &bridgeEnter, SOUTHBOUND);
+    }
+    if ( (data>>SARRIVAL) & 1 ) {
+        ASYNC(&this, &arrival, SOUTHBOUND);
+    }
+    if ( (data>>NBRIDGE) & 1 ) {
+        ASYNC(&this, &bridgeEnter, NORTHBOUND);
+    }
+    if ( (data>>NARRIVAL) & 1 ) {
+        ASYNC(&this, &arrival, NORTHBOUND);
+    }
+
     return 0;
 }
 
