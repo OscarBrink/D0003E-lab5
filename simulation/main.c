@@ -27,9 +27,11 @@ int main(void) {
     /* Set new terminal settings */
     tcsetattr(STDIN_FILENO, TCSANOW, &prgmTerminalSettings);
 
+
     char c;
     uint8_t a = 0;
     CLEAR();
+    initState();
     drawBridge();
 
     // TODO debug
@@ -38,9 +40,6 @@ int main(void) {
         a = a ? 0 : 1;
     }
 
-    lightStatus = BOTHRED;
-    arrivalBuffers[SOUTHBOUND] = 320;
-    arrivalBuffers[NORTHBOUND] = 355;
     //debug
 
     do {
