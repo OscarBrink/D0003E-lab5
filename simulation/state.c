@@ -17,6 +17,18 @@ void initState(void) {
     arrivalBuffers[NORTHBOUND] = 355;
 }
 
+void updateState(void) {
+    while (1) {
+        updateBridge();
+        if (lightStatus == NORTHBOUNDGREEN) {
+            bridgeEnter(NORTHBOUND);
+        } else if (lightStatus == SOUTHBOUNDGREEN) {
+            bridgeEnter(SOUTHBOUND);
+        }
+        sleep(1);
+    }
+}
+
 void arrival(uint64_t dir) {
     uint8_t data = (dir == NORTHBOUND) ? 0b0001 : 0b0100;
     write(serial_fd, &data, 1);
@@ -53,4 +65,19 @@ void updateBridge(void) {
 }
 
 //void bridgeExit
+
+void readSerialPort(void) {
+    uint8_t data;
+    while (1) {
+        if (read(serial_fd, &data, 1) != -1) {
+            if (data == 0b1001) {        // Northbound green, Southbound red
+                lightStatus = NORTHBOUNDGREEN;
+            } else if (data == 0b0110) { // Southbound green, Northbound red
+                lightStatus = SOUTHBOUNDGREEN;;
+            } else if (data == 0b1010) { // Both red
+                lightStatus = BOTHRED;;
+            }
+        }
+    }
+}
 
