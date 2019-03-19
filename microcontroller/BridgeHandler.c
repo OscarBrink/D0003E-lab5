@@ -1,13 +1,11 @@
-#include "BridgeHandler.h"
-
+#include "BridgeHandler.h" 
 #include <avr/io.h>
+#include "avrprint.h"
 
 #define MAXCARSONBRIDGE 5
 
-#define SBRIDGE 3
-#define SARRIVAL 2
-#define NBRIDGE 1
-#define NARRIVAL 0
+
+uint8_t lightCalled = 0;
 
 // Helper functions
 static inline uint8_t getOppositeDirection(BridgeHandler *this);
@@ -23,6 +21,7 @@ static inline uint8_t getDirectionLightGreen(BridgeHandler *this) {
 }
 
 void arrival(BridgeHandler *this, uint8_t direction) {
+    writeChar('0', 1);
     (this->arrivalBuffer[direction])++;
 
     if ( this->bridgeBuffer == 0) {
@@ -35,6 +34,7 @@ void arrival(BridgeHandler *this, uint8_t direction) {
 }
 
 void bridgeEnter(BridgeHandler *this, uint8_t direction) {
+    writeChar('1', 1);
     if ( this->direction != direction ) this->direction = direction;
 
     ASYNC(this, &changeLightStatus, ALLRED);
@@ -60,7 +60,7 @@ void bridgeExit(BridgeHandler *this, uint8_t arg) {
         } else if (this->arrivalBuffer[this->direction] != 0) { // Keep em' coming
             ASYNC(this, &changeLightStatus, getDirectionLightGreen(this));
         }
-    } else if ( this->bridgeBuffer < MAXCARSONBRIDGE && this->arrivalBuffer[getOppositeDirection(this)] == 0) {
+    } else if (this->bridgeBuffer < MAXCARSONBRIDGE && this->arrivalBuffer[getOppositeDirection(this)] == 0) {
         ASYNC(this, &changeLightStatus, getDirectionLightGreen(this));
     }
 }
@@ -68,33 +68,15 @@ void bridgeExit(BridgeHandler *this, uint8_t arg) {
 // USART IO methods
 void changeLightStatus(BridgeHandler *this, uint8_t lightStatus) {
 
+    lightCalled = lightCalled == 9 ? 0 : lightCalled + 1;
+    writeChar('0' + lightCalled, 0);
     while ( !(UCSR0A & (1<<UDRE0)) ); // Wait until empty transmit buffer
 
     UDR0 = (lightStatus == NORTHBOUNDGREEN) ? 0b1001 : // Northbound green, Southbound red
            (lightStatus == SOUTHBOUNDGREEN) ? 0b0110 : // Southbound green, Northbound red
            0b1010;                                     // Both red
+    writeChar('1', 1);
 
     this->lightStatus = lightStatus; 
-}
-
-uint8_t readSensors(BridgeHandler *this, uint8_t arg) {
-
-    //while ( !(UCSR0A & (1<<RXC) );
-    uint8_t data = UDR0;
-
-    if ( (data>>SBRIDGE) & 1 ) {
-        ASYNC(&this, &bridgeEnter, SOUTHBOUND);
-    }
-    if ( (data>>SARRIVAL) & 1 ) {
-        ASYNC(&this, &arrival, SOUTHBOUND);
-    }
-    if ( (data>>NBRIDGE) & 1 ) {
-        ASYNC(&this, &bridgeEnter, NORTHBOUND);
-    }
-    if ( (data>>NARRIVAL) & 1 ) {
-        ASYNC(&this, &arrival, NORTHBOUND);
-    }
-
-    return 0;
 }
 
