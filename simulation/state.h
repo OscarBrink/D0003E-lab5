@@ -14,5 +14,5 @@ void initState(void);
 void arrival(uint64_t direction);
 void bridgeEnter(uint64_t direction);
 void updateBridge(void);
-void readSerialPort(void);
+void *readSerialPort(void *arg);
 
