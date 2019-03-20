@@ -1,6 +1,11 @@
 #include "avrinit.h"
 #include "avrprint.h"
 
+#define CPUFREQ 8000000
+#define BAUD 9600
+#define UBRR (CPUFREQ / 16 / BAUD - 1)
+
+
 void initializeAVR(void) {
     initLCD();
     initIO();
@@ -51,9 +56,18 @@ void initIO(void) {
          |  (1<<DDE4);  // Configure PORT E Pin 4 as output
 
     // USART Control and Status Register B
-    //UCSR0B |= (1<<RXEN0) // USART Reciever Enable
-    //       |  (1<TXEN0); // USART Transmitter Enable
+    UCSR0B |= (1<<RXEN0)  // USART Reciever Enable
+           |  (1<<TXEN0); // USART Transmitter Enable
 
+    // USART Baud Rate Registers
+    UBRR0H = (uint8_t) (UBRR>>8); // Upper 4 bits of Baud Rate
+    UBRR0L = (uint8_t) (UBRR);    // Lower 8 bits of Baud Rate
+
+    //UBRR 51
+    //8 MHz
+    //
+    //BAUD = (system oscillator clock freq) / ( 16 * (UBRR + 1) )
+    //UBRR = (system oscillator clock freq) / ( 16 * (BAUD) ) - 1
 }
 
 
@@ -62,16 +76,19 @@ void initInt(void) {
     // Timer/Counter1 Interrupt Mask Register
     //TIMSK1 = (1<<OCIE1A);   // Output Compare A Match Interrupt Enable
 
+    // USART Control and Status Register B
+    UCSR0B |= (1<<RXCIE0);    // RX Complete Interrupt Enable
+
     // External Interrupt Mask Register
-    EIMSK |= (1<<PCIE1)     // Pin Change Interrupt Enable for PCINT15..8
-          |  (1<<PCIE0);    // Pin Change Interrupt Enable for PCINT7..0
+    //EIMSK |= (1<<PCIE1)     // Pin Change Interrupt Enable for PCINT15..8
+    //      |  (1<<PCIE0);    // Pin Change Interrupt Enable for PCINT7..0
 
-    // Pin Change Mask Register for PCINT15..8
-    PCMSK1 |= (1<<PCINT15)  // Pin change interrupt enabled for PORT B Pin 7
-           |  (1<<PCINT14)  // Pin change interrupt enabled for PORT B Pin 6
-           |  (1<<PCINT12); // Pin change interrupt enabled for PORT B Pin 4
+    //// Pin Change Mask Register for PCINT15..8
+    //PCMSK1 |= (1<<PCINT15)  // Pin change interrupt enabled for PORT B Pin 7
+    //       |  (1<<PCINT14)  // Pin change interrupt enabled for PORT B Pin 6
+    //       |  (1<<PCINT12); // Pin change interrupt enabled for PORT B Pin 4
 
-    // Pin Change Mask Register for PCINT7..0
-    PCMSK0 |= (1<<PCINT3)   // Pin change interrupt enabled for PORT E Pin 3
-           |  (1<<PCINT2);  // Pin change interrupt enabled for PORT E Pin 2
+    //// Pin Change Mask Register for PCINT7..0
+    //PCMSK0 |= (1<<PCINT3)   // Pin change interrupt enabled for PORT E Pin 3
+    //       |  (1<<PCINT2);  // Pin change interrupt enabled for PORT E Pin 2
 }
