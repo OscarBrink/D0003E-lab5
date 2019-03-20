@@ -1,14 +1,85 @@
 #include "tui.h"
 
+#include <termios.h>
+#include <unistd.h>
+
 #include <stdint.h>
 #include <inttypes.h>
 
 #include "state.h"
 
-void draw(char c) {
-    drawLights();
-    drawCars();
-    printf("\x1B[H"); // Send cursor to home
+static struct termios oldTerminalSettings, prgmTerminalSettings;
+
+struct {
+    uint64_t northboundBuffer;
+    uint64_t southboundBuffer;
+} a;
+
+uint64_t tuiContext = 0;
+uint64_t timesDrawn = 0;
+
+void initTUI(void) {
+    /* Get settings of stdin */
+    tcgetattr(STDIN_FILENO, &oldTerminalSettings);
+
+    /* Copy settings */
+    prgmTerminalSettings = oldTerminalSettings;
+
+    /* Set new terminal attributes */
+    prgmTerminalSettings.c_lflag &= ~(ICANON) // Disable input buffer until endl or EOF
+                                 &  ~(ECHO);  // Don't echo back typed keys
+
+    //prgmTerminalSettings.c_cc[VMIN] = 0;      //
+    //prgmTerminalSettings.c_cc[VTIME] = 0;     // These two sets polling read
+
+    /* Set new terminal settings */
+    tcsetattr(STDIN_FILENO, TCSANOW, &prgmTerminalSettings);
+
+    runTUI = 1;
+    sem_init(&tuiSem, 0, 0);
+
+    CLEAR();
+    //printf("\x1B[35;1H%10d%10d", prgmTerminalSettings.c_cc[VMIN], prgmTerminalSettings.c_cc[VTIME]);
+
+    drawBridge();
+    //printf("here\n");
+    //draw();
+
+}
+
+void endTUI(void) {
+    runTUI = 0;
+}
+
+void sigTUIUpdate(void) {
+    printf("\x1B[25;1Hcontext tui  %10"PRIu64, ++tuiContext);
+    sem_post(&tuiSem);
+}
+
+void *draw(void *arg) {
+    while (runTUI) {
+        printf("\x1B[27;1Hdraw %10"PRIu64, ++timesDrawn);
+        drawLights();
+        drawCars();
+        printf("\x1B[H"); // Send cursor to home
+
+        //printf("\x1B[24;1Hcontext state                         ");
+        sem_wait(&tuiSem);
+
+        /*
+        pthread_mutex_lock(&tuiMutex);
+        printf("\x1B[24;1HtuiMutex draw                         ");
+        //readyToUpdateTUI = 0;
+        pthread_mutex_unlock(&tuiMutex);
+        // update tui at some point
+        */
+    }
+
+    CLEAR();
+    /* Restore old settings */
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldTerminalSettings);
+
+    return NULL;
 }
 
 void drawBridge(void) {
@@ -83,6 +154,8 @@ void drawCars(void) {
         } else if (bridgeBuffer[i] == CARNORTH) {
             printf("\x1B[36m"); // set fg cyan
             DRAW_S_AT("0", (uint64_t) (STARTX + 6 + i), (uint64_t) STARTY + 2);
+        } else {
+            DRAW_S_AT(" ",  (uint64_t) (STARTX + 6 + i), (uint64_t) STARTY + 2);
         }
     }
     
