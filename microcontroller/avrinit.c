@@ -56,8 +56,8 @@ void initIO(void) {
          |  (1<<DDE4);  // Configure PORT E Pin 4 as output
 
     // USART Control and Status Register B
-    UCSR0B |= (1<<RXEN0) // USART Reciever Enable
-           |  (1<TXEN0); // USART Transmitter Enable
+    UCSR0B |= (1<<RXEN0)  // USART Reciever Enable
+           |  (1<<TXEN0); // USART Transmitter Enable
 
     // USART Baud Rate Registers
     UBRR0H = (uint8_t) (UBRR>>8); // Upper 4 bits of Baud Rate
