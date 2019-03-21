@@ -29,7 +29,6 @@ void bridgeExit(BridgeHandler *this, uint8_t arg);
 
 // USART IO methods
 void changeLightStatus(BridgeHandler *this, uint8_t lightStatus);
-//uint8_t readSensors(BridgeHandler *this, uint8_t arg);
 
 #endif
 
