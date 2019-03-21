@@ -12,9 +12,10 @@
 
 //#define THREADS 2
 
-uint64_t ioCounter = 0;
-uint64_t ioContext = 0;
+//uint64_t ioCounter = 0;
+//uint64_t ioContext = 0;
 
+void *userInput(void *arg);
 
 int main(void) {
 
@@ -22,6 +23,7 @@ int main(void) {
     pthread_t stateLoopThread;
     pthread_t arrivalThread;
     pthread_t tuiThread;
+    pthread_t userInputThread;
 
     initTUI();
     initState();
@@ -42,15 +44,33 @@ int main(void) {
         printf("\x1B[19;1HFailed to create TUI thread");
     }
 
-    char c;
+    if (pthread_create(&userInputThread, NULL, userInput, NULL)) {
+        printf("\x1B[19;1HFailed to create user input thread");
+    }
+
     //CLEAR();
     //initState();
     //drawBridge();
 
 
+
+    pthread_join(ioThread, NULL);
+    //pthread_join(stateLoopThread, NULL);
+    //pthread_join(arrivalThread, NULL);
+    //pthread_join(tuiThread, NULL);
+    //pthread_join(userInputThread, NULL);
+
+    endTUI();
+
+    return 0;
+}
+
+void *userInput(void *arg) {
+    char c;
+
     do {
-        printf("\x1B[24;1Hcontext io   %10"PRIu64, ++ioContext);
-        printf("\x1B[6;0HinputCounter: %"PRIu64, ioCounter++);
+        //printf("\x1B[24;1Hcontext io   %10"PRIu64, ++ioContext);
+        //printf("\x1B[6;0HinputCounter: %"PRIu64, ioCounter++);
         if (c == 's') {
             //lightStatus = SOUTHBOUNDGREEN;
             pthread_mutex_lock(&arrivalMutex);
@@ -73,17 +93,11 @@ int main(void) {
         //    drawBridge();
         //}
 
-        //draw();
+        //draw(NULL);
+        //write(1, &a, 1);
     } while ( (c = getchar()) != 'q' );
 
-    pthread_join(ioThread, NULL);
-    pthread_join(stateLoopThread, NULL);
-    pthread_join(arrivalThread, NULL);
-    pthread_join(tuiThread, NULL);
-
-    endTUI();
-
-    return 0;
+    return NULL;
 }
 
 //void threadsInit(void) {
