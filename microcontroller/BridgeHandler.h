@@ -17,10 +17,11 @@ typedef struct {
     enum { ALLRED, NORTHBOUNDGREEN, SOUTHBOUNDGREEN } lightStatus;
     enum { NORTHBOUND, SOUTHBOUND } direction;
     uint8_t bridgeBuffer;
+    uint64_t oneDirectionTotal;
     uint64_t arrivalBuffer[2];
 } BridgeHandler;
 
-#define initBridgeHandler() { initObject(), ALLRED, 0, 0, { 0, 0 } }
+#define initBridgeHandler() { initObject(), ALLRED, 0, 0, 0, { 0, 0 } }
 
 void arrival(BridgeHandler *this , uint8_t direction);
 void bridgeEnter(BridgeHandler *this, uint8_t direction);
@@ -28,7 +29,6 @@ void bridgeExit(BridgeHandler *this, uint8_t arg);
 
 // USART IO methods
 void changeLightStatus(BridgeHandler *this, uint8_t lightStatus);
-//uint8_t readSensors(BridgeHandler *this, uint8_t arg);
 
 #endif
 

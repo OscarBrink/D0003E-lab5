@@ -7,7 +7,7 @@ uint8_t interruptCounter = 0;
 uint8_t readSensors(InterruptHandler *this, uint8_t arg) {
     //writeChar('0', 5);
     interruptCounter = interruptCounter == 9 ? 0 : interruptCounter + 1;
-    writeChar('0' + interruptCounter, 0);
+    //writeChar('0' + interruptCounter, 0);
 
     //while ( !(UCSR0A & (1<<RXC) );
     uint8_t data = UDR0;
