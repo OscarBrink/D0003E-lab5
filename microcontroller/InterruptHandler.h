@@ -14,5 +14,5 @@ typedef struct {
 #define NARRIVAL 0
 
 
-uint8_t readSensors(InterruptHandler *this, uint8_t arg);
+void readSerial(InterruptHandler *this, uint8_t arg);
 
