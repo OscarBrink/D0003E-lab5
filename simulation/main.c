@@ -57,7 +57,7 @@ int main(void) {
     pthread_join(ioThread, NULL);
     //pthread_join(stateLoopThread, NULL);
     //pthread_join(arrivalThread, NULL);
-    //pthread_join(tuiThread, NULL);
+    pthread_join(tuiThread, NULL);
     //pthread_join(userInputThread, NULL);
 
     endTUI();
@@ -73,16 +73,20 @@ void *userInput(void *arg) {
         //printf("\x1B[6;0HinputCounter: %"PRIu64, ioCounter++);
         if (c == 's') {
             //lightStatus = SOUTHBOUNDGREEN;
-            pthread_mutex_lock(&arrivalMutex);
+	        printf("\x1B[38;0Hstatetry D");
+            pthread_mutex_lock(&stateMutex);
+	        printf("\x1B[39;0Hstatemut D");
             arrivalDirection = SOUTHBOUND;
-            pthread_mutex_unlock(&arrivalMutex);
+            pthread_mutex_unlock(&stateMutex);
             sem_post(&arrivalSem);
         }
         else if (c == 'n') {
             //lightStatus = NORTHBOUNDGREEN;
-            pthread_mutex_lock(&arrivalMutex);
+	        printf("\x1B[38;0Hstatetry E");
+            pthread_mutex_lock(&stateMutex);
+	        printf("\x1B[39;0Hstatemut E");
             arrivalDirection = NORTHBOUND;
-            pthread_mutex_unlock(&arrivalMutex);
+            pthread_mutex_unlock(&stateMutex);
             sem_post(&arrivalSem);
         }
         //else if (c == 'r') {
@@ -132,7 +136,7 @@ void *userInput(void *arg) {
 //    cfsetispeed(&serialSettings, B9600);
 //
 //    if (pthread_mutex_init(&ioMutex, NULL) != 0) printf("\x1B[21;1HFailed to create ioMutex");
-//    if (pthread_mutex_init(&arrivalMutex, NULL) != 0) printf("\x1B[21;1HFailed to create arrivalMutex");
+//    if (pthread_mutex_init(&stateMutex, NULL) != 0) printf("\x1B[21;1HFailed to create stateMutex");
 //
 //    sem_init(&stateLoopSem, 0, 0);
 //

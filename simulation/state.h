@@ -8,14 +8,18 @@
 
 pthread_mutex_t ioMutex;
 sem_t stateLoopSem;
-pthread_mutex_t arrivalMutex;
+pthread_mutex_t stateMutex;
 sem_t arrivalSem;
 uint64_t arrivalDirection;
 
-enum { SOUTHBOUND, NORTHBOUND } direction;
-enum { BOTHRED, SOUTHBOUNDGREEN, NORTHBOUNDGREEN } lightStatus;
+typedef enum { SOUTHBOUND, NORTHBOUND } dir;
+dir direction;
+typedef enum { BOTHRED, SOUTHBOUNDGREEN, NORTHBOUNDGREEN } light;
+light lightStatus;
 
-enum { NOCAR, CARSOUTH, CARNORTH } bridgeBuffer[MAXCARSONBRIDGE];
+typedef enum { NOCAR, CARSOUTH, CARNORTH } bridge;
+bridge bridgeBuffer[MAXCARSONBRIDGE];
+
 uint64_t bridgeEmpty;
 uint64_t pendingEnter;
 

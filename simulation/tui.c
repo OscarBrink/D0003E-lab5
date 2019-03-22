@@ -11,11 +11,6 @@
 
 static struct termios oldTerminalSettings, prgmTerminalSettings;
 
-struct {
-    uint64_t northboundBuffer;
-    uint64_t southboundBuffer;
-} a;
-
 uint64_t tuiContext = 0;
 uint64_t timesDrawn = 0;
 
@@ -52,6 +47,7 @@ void initTUI(void) {
 
 void endTUI(void) {
     runTUI = 0;
+    sigTUIUpdate();
 }
 
 void sigTUIUpdate(void) {
@@ -104,12 +100,20 @@ void drawBridge(void) {
 }
 
 void drawLights(void) {
-    if (lightStatus == SOUTHBOUNDGREEN) {
+
+    /* Save variables under mutex */
+	printf("\x1B[38;0Hstatetry 5");
+    pthread_mutex_lock(&stateMutex);
+	printf("\x1B[39;0Hstatemut 5");
+    uint64_t temp_lightStatus = lightStatus;
+    pthread_mutex_unlock(&stateMutex);
+
+    if (temp_lightStatus == SOUTHBOUNDGREEN) {
         printf("\x1B[42m"); // set bg green
         DRAW_S_AT(" ", (uint64_t) (STARTX + 11), (uint64_t) (STARTY - 1));
         printf("\x1B[41m"); // set bg red
         DRAW_S_AT(" ", (uint64_t) (STARTX + 5), (uint64_t) (STARTY + 5));
-    } else if (lightStatus == NORTHBOUNDGREEN) {
+    } else if (temp_lightStatus == NORTHBOUNDGREEN) {
         printf("\x1B[41m"); // set bg red
         DRAW_S_AT(" ", (uint64_t) (STARTX + 11), (uint64_t) (STARTY - 1));
         printf("\x1B[42m"); // set bg green
@@ -125,14 +129,24 @@ void drawLights(void) {
 
 void drawCars(void) {
 
+    /* Save variables under mutex */
+	printf("\x1B[38;0Hstatetry C");
+    pthread_mutex_lock(&stateMutex);
+	printf("\x1B[39;0Hstatemut C");
+    bridge temp_bridgeBuffer[MAXCARSONBRIDGE];
+    for (int i = 0; i < MAXCARSONBRIDGE; i++) temp_bridgeBuffer[i] = bridgeBuffer[i];
+    uint64_t temp_northboundArrivalBuffer = arrivalBuffers[NORTHBOUND];
+    uint64_t temp_southboundArrivalBuffer = arrivalBuffers[SOUTHBOUND];
+    pthread_mutex_unlock(&stateMutex);
+
     /* Northbound cars arrival */
     printf("\x1B[36m"); // set fg cyan
-    printf("\x1B[%d;%dH%5"PRIu64, STARTY + 3, 1, arrivalBuffers[NORTHBOUND]);
-    if (arrivalBuffers[NORTHBOUND] > 5) {
+    printf("\x1B[%d;%dH%5"PRIu64, STARTY + 3, 1, temp_northboundArrivalBuffer);
+    if (temp_northboundArrivalBuffer > 5) {
         printf("\x1B[%d;%dH%s", STARTY + 3, STARTX - 3, "...00000"); // Reversed order: y, x
     } else {
         uint64_t x = STARTX + 4;
-        uint64_t carsToDraw = arrivalBuffers[NORTHBOUND];
+        uint64_t carsToDraw = temp_northboundArrivalBuffer;
         for (int i = 0; i < 8; i++) {
             if (carsToDraw > 0) {
                 DRAW_C_AT('0', x--, (uint64_t) (STARTY + 3));
@@ -145,12 +159,12 @@ void drawCars(void) {
     
     /* Southbound cars arrival */
     printf("\x1B[35m"); // set fg magenta
-    printf("\x1B[%d;%dH%"PRIu64"       ", STARTY + 1, STARTX + 21, arrivalBuffers[SOUTHBOUND]);
-    if (arrivalBuffers[SOUTHBOUND] > 5) {
+    printf("\x1B[%d;%dH%"PRIu64"       ", STARTY + 1, STARTX + 21, temp_southboundArrivalBuffer);
+    if (temp_southboundArrivalBuffer > 5) {
         printf("\x1B[%d;%dH%s", STARTY + 1, STARTX + 12, "00000..."); // Reversed order: y, x
     } else {
         uint64_t x = STARTX + 12;
-        uint64_t carsToDraw = arrivalBuffers[SOUTHBOUND];
+        uint64_t carsToDraw = temp_southboundArrivalBuffer;
         for (int i = 0; i < 8; i++) {
             if (carsToDraw > 0) {
                 DRAW_C_AT('0', x++, (uint64_t) (STARTY + 1));
@@ -163,10 +177,10 @@ void drawCars(void) {
 
     /* Cars on bridge */
     for (int i = 0; i < MAXCARSONBRIDGE; i++) {
-        if (bridgeBuffer[i] == CARSOUTH) {
+        if (temp_bridgeBuffer[i] == CARSOUTH) {
             printf("\x1B[35m"); // set fg magenta
             DRAW_S_AT("0", (uint64_t) (STARTX + 6 + i), (uint64_t) STARTY + 2);
-        } else if (bridgeBuffer[i] == CARNORTH) {
+        } else if (temp_bridgeBuffer[i] == CARNORTH) {
             printf("\x1B[36m"); // set fg cyan
             DRAW_S_AT("0", (uint64_t) (STARTX + 6 + i), (uint64_t) STARTY + 2);
         } else {
