@@ -11,7 +11,7 @@ int main(void) {
 
     InterruptHandler interruptHandler = initInterruptHandler(&bridgeHandler);
 
-    INSTALL(&interruptHandler, &readSensors, IRQ_USART0_RX);
+    INSTALL(&interruptHandler, &readSerial, IRQ_USART0_RX);
 
     return TINYTIMBER(&bridgeHandler, &changeLightStatus, ALLRED);
 }

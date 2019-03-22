@@ -4,7 +4,7 @@
 
 uint8_t interruptCounter = 0;
 
-uint8_t readSensors(InterruptHandler *this, uint8_t arg) {
+void readSerial(InterruptHandler *this, uint8_t arg) {
     //writeChar('0', 5);
     interruptCounter = interruptCounter == 9 ? 0 : interruptCounter + 1;
     //writeChar('0' + interruptCounter, 0);
@@ -37,7 +37,6 @@ uint8_t readSensors(InterruptHandler *this, uint8_t arg) {
         //writeChar('3', 3);
         ASYNC(this->bridgeHandler, &arrival, NORTHBOUND);
     }
-
-    return 0;
 }
+
 
