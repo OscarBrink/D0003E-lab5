@@ -2,6 +2,7 @@
 
 #include <termios.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include <stdint.h>
 #include <inttypes.h>
@@ -29,8 +30,10 @@ void initTUI(void) {
     prgmTerminalSettings.c_lflag &= ~(ICANON) // Disable input buffer until endl or EOF
                                  &  ~(ECHO);  // Don't echo back typed keys
 
-    //prgmTerminalSettings.c_cc[VMIN] = 0;      //
-    //prgmTerminalSettings.c_cc[VTIME] = 0;     // These two sets polling read
+    prgmTerminalSettings.c_cc[VMIN] = 0;      //
+    prgmTerminalSettings.c_cc[VTIME] = 1;     // These two sets polling read
+
+    fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK);
 
     /* Set new terminal settings */
     tcsetattr(STDIN_FILENO, TCSANOW, &prgmTerminalSettings);
@@ -128,21 +131,33 @@ void drawCars(void) {
     if (arrivalBuffers[NORTHBOUND] > 5) {
         printf("\x1B[%d;%dH%s", STARTY + 3, STARTX - 3, "...00000"); // Reversed order: y, x
     } else {
-        uint64_t x = STARTX + 5;
-        for (int i = 0; i < arrivalBuffers[NORTHBOUND]; i++) {
-            DRAW_C_AT('0', x--, (uint64_t) (STARTY + 3));
+        uint64_t x = STARTX + 4;
+        uint64_t carsToDraw = arrivalBuffers[NORTHBOUND];
+        for (int i = 0; i < 8; i++) {
+            if (carsToDraw > 0) {
+                DRAW_C_AT('0', x--, (uint64_t) (STARTY + 3));
+                carsToDraw--;
+            } else {
+                DRAW_C_AT(' ', x--, (uint64_t) (STARTY + 3));
+            }
         }
     }
     
     /* Southbound cars arrival */
     printf("\x1B[35m"); // set fg magenta
-    printf("\x1B[%d;%dH%"PRIu64, STARTY + 1, STARTX + 21, arrivalBuffers[SOUTHBOUND]);
+    printf("\x1B[%d;%dH%"PRIu64"       ", STARTY + 1, STARTX + 21, arrivalBuffers[SOUTHBOUND]);
     if (arrivalBuffers[SOUTHBOUND] > 5) {
         printf("\x1B[%d;%dH%s", STARTY + 1, STARTX + 12, "00000..."); // Reversed order: y, x
     } else {
         uint64_t x = STARTX + 12;
-        for (int i = 0; i < arrivalBuffers[SOUTHBOUND]; i++) {
-            DRAW_C_AT('0', x++, (uint64_t) (STARTY + 1));
+        uint64_t carsToDraw = arrivalBuffers[SOUTHBOUND];
+        for (int i = 0; i < 8; i++) {
+            if (carsToDraw > 0) {
+                DRAW_C_AT('0', x++, (uint64_t) (STARTY + 1));
+                carsToDraw--;
+            } else {
+                DRAW_C_AT(' ', x++, (uint64_t) (STARTY + 1));
+            }
         }
     }
 

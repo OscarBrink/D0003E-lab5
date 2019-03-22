@@ -58,15 +58,17 @@ void initState(void) {
 void *updateState(void *arg) {
     while (1) {
         printf("\x1B[28;1Hstate%10"PRIu64, ++stateUpdateCounter);
-        updateBridge();
         if (lightStatus == NORTHBOUNDGREEN && arrivalBuffers[NORTHBOUND] > 0) {
             bridgeEnter(NORTHBOUND);
         } else if (lightStatus == SOUTHBOUNDGREEN && arrivalBuffers[SOUTHBOUND] > 0) {
             bridgeEnter(SOUTHBOUND);
         }
+        updateBridge();
 
         printf("\x1B[34;1Hbridge empty  %"PRIu64, bridgeEmpty);
         sigTUIUpdate();
+        printf("\x1B[33;1Hpending enter %"PRIu64, pendingEnter);
+        printf("\x1B[34;1Hbridge empty  %"PRIu64, bridgeEmpty);
         if (!pendingEnter && bridgeEmpty) {
             sem_wait(&stateLoopSem);
         }
@@ -99,7 +101,7 @@ void arrival(uint64_t dir) {
 
 	printf("\x1B[3;0Hserial write: 0x%x", data);
     arrivalBuffers[dir]++;
-    if (!pendingEnter && bridgeEmpty) sem_post(&stateLoopSem);
+    //if (!pendingEnter && bridgeEmpty) sem_post(&stateLoopSem);
     sigTUIUpdate();
 }
 
@@ -111,7 +113,7 @@ void bridgeEnter(uint64_t dir) {
 //    pthread_mutex_unlock(&ioMutex);
 
     if (direction != dir) direction = dir;
-    if (arrivalBuffers[dir] > 0) arrivalBuffers[dir]--;
+    //if (arrivalBuffers[dir] > 0) arrivalBuffers[dir]--;
     pendingEnter = 1;
     /*
     if (direction == NORTHBOUND) {
@@ -153,14 +155,15 @@ void updateBridge(void) {
     for (int i = 0; i < MAXCARSONBRIDGE; i++) {
         printf("\x1B[32;%dH%u", 1 + i, bridgeBuffer[i]);
     }
-    printf("\x1B[33;1Hpending enter %"PRIu64, pendingEnter);
-    printf("\x1B[34;1Hbridge empty  %"PRIu64, bridgeEmpty);
+    //printf("\x1B[33;1Hpending enter %"PRIu64, pendingEnter);
+    //printf("\x1B[34;1Hbridge empty  %"PRIu64, bridgeEmpty);
     printf("\x1B[35;1HlightStatus   %u", lightStatus);
 
     bridgeEmpty = emptyCheck;
 
     if (pendingEnter) {
         pendingEnter = 0;
+        if (arrivalBuffers[direction] > 0) arrivalBuffers[direction]--;
         /* Send car enter signal to controller */
         pthread_mutex_lock(&ioMutex);
         write(serialFD, &data, 1);  
@@ -181,15 +184,15 @@ void *readSerialPort(void *arg) {
             pthread_mutex_unlock(&ioMutex);
             if (data == 0b1001) {        // Northbound green, Southbound red
                 lightStatus = NORTHBOUNDGREEN;
-                sem_post(&stateLoopSem);
+                if (!pendingEnter && bridgeEmpty) sem_post(&stateLoopSem);
                 sigTUIUpdate();
             } else if (data == 0b0110) { // Southbound green, Northbound red
                 lightStatus = SOUTHBOUNDGREEN;
-                sem_post(&stateLoopSem);
+                if (!pendingEnter && bridgeEmpty) sem_post(&stateLoopSem);
                 sigTUIUpdate();
             } else if (data == 0b1010) { // Both red
                 lightStatus = BOTHRED;
-                sem_post(&stateLoopSem);
+                //sem_post(&stateLoopSem);
                 sigTUIUpdate();
             }
 	        printf("\x1B[2;0Hserial read:  0x%x    ", data);
